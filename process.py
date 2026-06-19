@@ -90,21 +90,16 @@ if __name__ == "__main__":
     compressor = pb.load_plugin("ZL Compressor.vst3")
     gate = pb.load_plugin("BPGate.vst3")
 
-    print(f"noise suppressor: {noise.parameters.keys()}")
-    print(f"equalizer: {eq.parameters.keys()}")
-    print(f"compressor: {compressor.parameters.keys()}")
-    print(f"noise gate: {gate.parameters.keys()}")
+    # Set parameters
+    set_parameter(gate, "threshold", -24)
 
-    # # Set parameters
-    # set_parameter(gate, "threshold", -24)
+    # Process
+    chain = pb.Pedalboard([noise, eq, compressor, gate])
+    effected = chain(audio, sample_rate)
 
-    # # Process
-    # chain = pb.Pedalboard([noise, eq, compressor, gate])
-    # effected = chain(audio, sample_rate)
+    # Save
+    sf.write("1_processed.wav", effected, sample_rate)
+    print("Wrote file successfully.")
 
-    # # Save
-    # sf.write("1_processed.wav", effected, sample_rate)
-    # print("Wrote file successfully.")
-
-    # # Instant kill to prevent trailing background threads from keeping the console alive
+    # Instant kill to prevent trailing background threads from keeping the console alive
     os._exit(0)
