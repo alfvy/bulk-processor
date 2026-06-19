@@ -1,0 +1,659 @@
+PEDALBOARD PLUGIN PARAMETER REFERENCE
+=====================================
+
+Generated from the VST3 files currently loaded by process.py:
+
+    noise      = pb.load_plugin("rnnoise.vst3")
+    eq         = pb.load_plugin("FreeEQ8.vst3")
+    compressor = pb.load_plugin("ZL Compressor.vst3")
+    gate       = pb.load_plugin("BPGate.vst3")
+
+The values marked "initial" are the values reported immediately after loading the
+plugin. Pedalboard does not expose a separate default_value property for these
+plugins, so the initial value is the closest useful equivalent.
+
+
+HOW TO SET PARAMETERS
+---------------------
+
+Use the parameter ID, not the display name:
+
+    set_parameter(gate, "threshold_db", -24)
+    set_parameter(compressor, "threshold_db_threshold_db", -18)
+    set_parameter(eq, "band_1_freq", 100)
+    set_parameter(noise, "vad_threshold", 0.6)
+
+Direct Pedalboard assignment also works when the value is already exact:
+
+    gate.attack_ms = 10.0
+    compressor.compressor_style_compressor_style = "Optical"
+    eq.band_1_type = "HighPass"
+    noise.bypass = False
+
+To inspect a plugin at runtime:
+
+    print(plugin.parameters.keys())
+
+    for param_id, info in plugin.parameters.items():
+        print(
+            param_id,
+            info.name,
+            info.type,
+            info.min_value,
+            info.max_value,
+            info.valid_values,
+            getattr(plugin, param_id),
+        )
+
+Notes:
+
+* String choices are case-sensitive when assigned directly.
+* set_parameter() in process.py also handles normalized strings and maps a
+  numeric input to the nearest numeric-looking string choice.
+* Boolean values should be True or False.
+* Float ranges are inclusive.
+* Some plugins expose hundreds of quantized values for a float. Supplying a
+  normal number inside the documented range is sufficient.
+
+
+1. RNNOISE SUPPRESSION FOR VOICE
+================================
+
+File: rnnoise.vst3
+Pedalboard name: RNNoise suppression for voice
+Parameter count: 4
+
+vad_threshold
+    Display name: VAD Threshold
+    Type: float
+    Range: 0.0 to 1.0
+    Initial: 0.6
+    Meaning: Voice activity detection threshold.
+
+vad_grace_period_10ms_per_unit
+    Display name: VAD Grace Period (10ms per unit)
+    Type: float, whole-number steps
+    Range: 0 to 500
+    Initial: 20
+    Meaning: Grace period in units of 10 ms. A value of 20 is 200 ms.
+
+retroactive_vad_grace_period_10ms_per_unit
+    Display name: Retroactive VAD Grace Period (10ms per unit)
+    Type: float, whole-number steps
+    Range: 0 to 10
+    Initial: 0
+    Meaning: Retroactive grace period in units of 10 ms.
+        
+
+bypass
+    Display name: Bypass
+    Type: bool
+    Choices: False, True
+    Initial: False
+
+
+Example: 
+
+    set_parameter(noise, "vad_threshold", 0.6)
+    set_parameter(noise, "vad_grace_period_10ms_per_unit", 20)
+    set_parameter(
+            noise,
+            "retroactive_vad_grace_period_10ms_per_unit",
+            5,
+        )
+    Example: set_parameter(noise, "bypass", False)
+
+
+2. FREEEQ8
+==========
+
+File: FreeEQ8.vst3
+Pedalboard name: FreeEQ8
+Parameter count: 129
+
+GLOBAL PARAMETERS
+-----------------
+
+output_gain
+    Display name: Output Gain
+    Type: float
+    Range: -24.0 to +24.0
+    Initial: 0.0
+    Example: set_parameter(eq, "output_gain", -1.5)
+
+scale
+    Display name: Scale
+    Type: float
+    Range: 0.1 to 2.0
+    Initial: 1.0
+    Example: set_parameter(eq, "scale", 1.0)
+
+adaptive_q
+    Display name: Adaptive Q
+    Type: bool
+    Initial: False
+
+oversampling
+    Display name: Oversampling
+    Type: float
+    Choices: 1.0, 2.0, 4.0, 8.0
+    Label: x
+    Initial: 1.0
+    Example: set_parameter(eq, "oversampling", 4)
+
+processing_mode
+    Display name: Processing Mode
+    Type: string
+    Choices: "Stereo", "Mid-Side"
+    Initial: "Stereo"
+
+linear_phase
+    Display name: Linear Phase
+    Type: bool
+    Initial: False
+
+auto_gain
+    Display name: Auto Gain
+    Type: bool
+    Initial: False
+
+intent_mode
+    Display name: Intent Mode
+    Type: string
+    Choices: "None", "Vocal Clean", "Drum Punch", "Guitar Space",
+             "Master Polish"
+    Initial: "None"
+
+bypass
+    Display name: Bypass
+    Type: bool
+    Initial: False
+
+
+EQ BAND PARAMETERS
+------------------
+
+FreeEQ8 has eight bands. Replace N below with a band number from 1 through 8.
+Every generated ID is listed by this template:
+
+band_N_on
+    Type: bool
+    Initial: True
+    Enables the band.
+
+band_N_solo
+    Type: bool
+    Initial: False
+    Solos the band.
+
+band_N_type
+    Type: string
+    Choices: "Bell", "LowShelf", "HighShelf", "HighPass", "LowPass",
+             "Bandpass"
+    Initial: "Bell"
+
+band_N_slope
+    Type: float
+    Choices: 12.0, 24.0, 48.0
+    Label: dB
+    Initial: 12.0
+    Mainly relevant to pass/shelf filter types.
+
+band_N_channel
+    Type: string
+    Choices: "Both", "L / Mid", "R / Side"
+    Initial: "Both"
+
+band_N_link
+    Type: string
+    Choices: "--", "A", "B"
+    Initial: "--"
+
+band_N_freq
+    Type: float
+    Range: 20.0 to 20000.0
+    Practical unit: Hz
+    Initial values by band:
+        band_1_freq = 80.0
+        band_2_freq = 250.0
+        band_3_freq = 500.0
+        band_4_freq = 1000.0
+        band_5_freq = 2000.0
+        band_6_freq = 4000.0
+        band_7_freq = 8000.0
+        band_8_freq = approximately 12000.0
+
+band_N_q
+    Type: float
+    Range: 0.1 to 24.0
+    Initial: 1.0
+
+band_N_gain
+    Type: float
+    Range: -24.0 to +24.0
+    Practical unit: dB
+    Initial: 0.0
+
+band_N_drive
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 0.0
+
+band_N_dyn_on
+    Type: bool
+    Initial: False
+    Enables dynamic processing for the band.
+
+band_N_threshold
+    Type: float
+    Range: -60.0 to 0.0
+    Practical unit: dB
+    Initial: -20.0
+
+band_N_ratio
+    Type: float
+    Range: 1.0 to 20.0
+    Initial: 4.0
+
+band_N_attack
+    Type: float
+    Range: 0.1 to 100.0
+    Practical unit: ms
+    Initial: 10.0
+
+band_N_release
+    Type: float
+    Range: 1.0 to 1000.0
+    Practical unit: ms
+    Initial: 100.0
+
+Examples:
+
+    set_parameter(eq, "band_1_type", "HighPass")
+    set_parameter(eq, "band_1_freq", 80)
+    set_parameter(eq, "band_1_slope", 24)
+
+    set_parameter(eq, "band_4_type", "Bell")
+    set_parameter(eq, "band_4_freq", 1000)
+    set_parameter(eq, "band_4_q", 1.2)
+    set_parameter(eq, "band_4_gain", -3)
+
+    set_parameter(eq, "band_6_dyn_on", True)
+    set_parameter(eq, "band_6_threshold", -24)
+    set_parameter(eq, "band_6_ratio", 3)
+    set_parameter(eq, "band_6_attack", 10)
+    set_parameter(eq, "band_6_release", 100)
+
+
+3. ZL COMPRESSOR
+================
+
+File: ZL Compressor.vst3
+Pedalboard name: ZL Compressor
+Parameter count: 82
+
+The duplicated-looking IDs below are the exact Python IDs reported by the
+plugin. For example, use "threshold_db_threshold_db", not "threshold".
+
+MAIN COMPRESSION PARAMETERS
+---------------------------
+
+compressor_style_compressor_style
+    Display name: Compressor Style
+    Type: string
+    Choices: "Clean", "Classic", "Optical", "Vocal"
+    Initial: "Clean"
+
+compression_direction_compression_direction
+    Display name: Compression Direction
+    Type: string
+    Choices: "Compress", "Inflate", "Expand", "Shape"
+    Initial: "Compress"
+
+threshold_db_threshold_db
+    Display name: Threshold (dB)
+    Type: float
+    Range: -100.0 to 0.0
+    Initial: -32.0
+
+ratio_ratio
+    Display name: Ratio
+    Type: float
+    Range: 1.0 to 100.0
+    Initial: 3.0
+
+knee_width_knee_width
+    Display name: Knee Width
+    Type: float
+    Range: 0.0 to 32.0
+    Initial: 8.0
+
+curve_curve
+    Display name: Curve
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 50.0
+
+floor_floor
+    Display name: Floor
+    Type: float
+    Range: -200.0 to -80.0
+    Initial: -140.0
+
+attack_attack
+    Display name: Attack
+    Type: float
+    Range: 0.0 to 1000.0
+    Initial: 100.0
+
+release_release
+    Display name: Release
+    Type: float
+    Range: 0.0 to 5000.0
+    Initial: 500.0
+
+pump_pump
+    Display name: Pump
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 0.0
+
+smooth_smooth
+    Display name: Smooth
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 0.0
+
+hold_hold
+    Display name: Hold
+    Type: float
+    Range: 0.0 to 1000.0
+    Initial: 0.0
+
+range_range
+    Display name: Range
+    Type: float
+    Range: 0.0 to 80.0
+    Initial: 80.0
+
+range_inf_range_inf
+    Display name: Range INF
+    Type: bool
+    Initial: False
+
+wet_wet
+    Display name: Wet
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 100.0
+
+makeup_gain_makeup_gain
+    Display name: Makeup Gain
+    Type: float
+    Range: -30.0 to +30.0
+    Initial: 0.0
+
+compressor_on_compressor_on
+    Display name: Compressor ON
+    Type: bool
+    Initial: True
+
+compressor_delta_compressor_delta
+    Display name: Compressor Delta
+    Type: bool
+    Initial: False
+
+clipper_drive_clipper_drive
+    Display name: Clipper Drive
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 0.0
+
+oversample_oversample
+    Display name: Oversample
+    Type: string
+    Choices: "Off", "2x", "4x", "8x"
+    Initial: "Off"
+
+lookahead_lookahead
+    Display name: Lookahead
+    Type: float
+    Range: -20.0 to +20.0
+    Initial: 0.0
+
+
+SIDECHAIN AND STEREO PARAMETERS
+-------------------------------
+
+external_side_external_side
+    Display name: External Side
+    Type: bool
+    Initial: False
+
+side_out_side_out
+    Display name: Side Out
+    Type: bool
+    Initial: False
+
+side_gain_side_gain
+    Display name: Side Gain
+    Type: float
+    Range: -15.0 to +15.0
+    Initial: 0.0
+
+side_stereo_mode_side_stereo_mode
+    Display name: Side Stereo Mode
+    Type: string
+    Choices: "Mid Side", "Left Right", "Mis Side Max", "Left Right Max"
+    Initial: "Mid Side"
+    Note: "Mis Side Max" is the exact string reported by the plugin.
+
+side_stereo_swap_side_stereo_swap
+    Display name: Side Stereo Swap
+    Type: bool
+    Initial: False
+
+side_stereo_link_side_stereo_link
+    Display name: Side Stereo Link
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 0.0
+
+side_stereo_wet_1_side_stereo_wet_1
+    Display name: Side Stereo Wet 1
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 100.0
+
+side_stereo_wet_2_side_stereo_wet_2
+    Display name: Side Stereo Wet 2
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 100.0
+
+
+RMS PARAMETERS
+--------------
+
+rms_on_rms_on
+    Display name: RMS ON
+    Type: bool
+    Initial: False
+
+rms_length_rms_length
+    Display name: RMS Length
+    Type: float
+    Range: 0.0 to 160.0
+    Initial: 32.0
+
+rms_speed_rms_speed
+    Display name: RMS Speed
+    Type: float
+    Range: 0.0 to 8.0
+    Initial: 1.0
+
+rms_mix_rms_mix
+    Display name: RMS Mix
+    Type: float
+    Range: 0.0 to 100.0
+    Initial: 50.0
+
+
+SIDECHAIN FILTER PARAMETERS
+---------------------------
+
+ZL Compressor has eight filter slots numbered 0 through 7. Replace N below
+with a number from 0 through 7. This template represents all 48 filter IDs.
+
+filter_statusN_filter_status
+    Type: string
+    Choices: "Off", "Bypass", "On"
+    Initial: "Off"
+
+filter_typeN_filter_type
+    Type: string
+    Choices: "Peak", "Low Shelf", "Low Pass", "High Shelf", "High Pass",
+             "Notch", "Band Pass", "Tilt Shelf"
+    Initial: "Peak"
+
+orderN_order
+    Type: string
+    Choices: "6 dB/oct", "12 dB/oct", "24 dB/oct", "48 dB/oct",
+             "72 dB/oct", "96 dB/oct"
+    Initial: "12 dB/oct"
+
+freqN_freq
+    Type: float
+    Range: 10.0 to 20000.0
+    Practical unit: Hz
+    Initial: 1000.0
+
+gainN_gain
+    Type: float
+    Range: -30.0 to +30.0
+    Practical unit: dB
+    Initial: 0.0
+
+qN_q
+    Type: float
+    Range: 0.025 to 25.0
+    Initial: 0.707
+
+Example using filter slot 0:
+
+    set_parameter(compressor, "filter_status0_filter_status", "On")
+    set_parameter(compressor, "filter_type0_filter_type", "High Pass")
+    set_parameter(compressor, "order0_order", "24 dB/oct")
+    set_parameter(compressor, "freq0_freq", 100)
+    set_parameter(compressor, "gain0_gain", 0)
+    set_parameter(compressor, "q0_q", 0.707)
+
+bypass
+    Display name: Bypass
+    Type: bool
+    Initial: False
+
+Basic compressor example:
+
+    set_parameter(
+        compressor,
+        "compressor_style_compressor_style",
+        "Optical",
+    )
+    set_parameter(compressor, "threshold_db_threshold_db", -18)
+    set_parameter(compressor, "ratio_ratio", 4)
+    set_parameter(compressor, "attack_attack", 20)
+    set_parameter(compressor, "release_release", 200)
+    set_parameter(compressor, "makeup_gain_makeup_gain", 2)
+    set_parameter(compressor, "oversample_oversample", "4x")
+
+
+4. BPA GATE
+===========
+
+File: BPGate.vst3
+Pedalboard name: BPA Gate
+Parameter count: 9
+
+preset
+    Display name: Preset
+    Type: float
+    Range: 0.0 to 1.0
+    Initial: 0.0
+    Note: The plugin exposes this as a normalized control rather than named
+          preset choices.
+
+bypass
+    Display name: Bypass
+    Type: float
+    Range: 0.0 to 1.0
+    Initial: 0.0
+    Practical use: 0.0 is off; 1.0 is on.
+    Note: Unlike the other plugins, BPA Gate reports bypass as a float.
+
+attack_ms
+    Display name: Attack
+    Type: float
+    Range: 0.1 to 500.0
+    Label: ms
+    Initial: 0.1
+
+hold_ms
+    Display name: Hold
+    Type: float
+    Range: 0.0 to 500.0
+    Label: ms
+    Initial: 0.0
+
+release_ms
+    Display name: Release
+    Type: float
+    Range: 0.1 to 500.0
+    Label: ms
+    Initial: 0.1
+
+range_db
+    Display name: Range
+    Type: string
+    Label: dB
+    Reported choices: 494 quantized strings from an infinity-like minimum
+                      through 0.0 dB.
+    Examples: "-90.3", "-84.7", "-24.7", "-24.6", "-0.1", "0.0"
+    Initial: plugin-specific infinity-like text
+    Recommended use: pass a normal number to set_parameter(), which selects
+                     the nearest numeric string.
+    Example: set_parameter(gate, "range_db", -60)
+
+threshold_db
+    Display name: Threshold
+    Type: string
+    Label: dB
+    Reported choices: 494 quantized strings from an infinity-like minimum
+                      through 0.0 dB.
+    Examples: "-90.3", "-84.7", "-24.7", "-24.6", "-0.1", "0.0"
+    Initial: plugin-specific infinity-like text
+    Recommended use: pass a normal number to set_parameter(), which selects
+                     the nearest numeric string.
+    Example: set_parameter(gate, "threshold_db", -24)
+
+curve_algo
+    Display name: Curve
+    Type: float
+    Label: Algo
+    Choices: 1.0, 2.0, 3.0
+    Initial: 1.0
+
+source
+    Display name: Source
+    Type: float
+    Choices: 0.0, 1.0
+    Initial: 0.0
+
+Basic gate example:
+
+    set_parameter(gate, "threshold_db", -24)
+    set_parameter(gate, "range_db", -60)
+    set_parameter(gate, "attack_ms", 5)
+    set_parameter(gate, "hold_ms", 50)
+    set_parameter(gate, "release_ms", 150)
+    set_parameter(gate, "curve_algo", 1)
