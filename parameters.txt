@@ -101,7 +101,7 @@ Example:
             "retroactive_vad_grace_period_10ms_per_unit",
             5,
         )
-    Example: set_parameter(noise, "bypass", False)
+    set_parameter(noise, "bypass", False)
 
 
 2. FREEEQ8
